@@ -57,7 +57,7 @@ jobs:
         run: |
           RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                       -H "Content-Type: application/json" \
-                      -d "{\"query\":\"query { repository(owner: \\\"tenucki\\\", name: \\\"workflow\\\") { ref(qualifiedName: \\\"refs/heads/${{ env.NORMALIZED_BRANCH }}\\\") { id } } }\"}" \
+                      -d "{\"query\":\"query { repository(owner: \\\"tenuckii\\\", name: \\\"workflow\\\") { ref(qualifiedName: \\\"refs/heads/${{ env.NORMALIZED_BRANCH }}\\\") { id } } }\"}" \
                       https://api.github.com/graphql)
 
           echo "GraphQL API Response: $RESPONSE"  # Debugging output
