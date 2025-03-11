@@ -60,20 +60,25 @@ jobs:
 
           echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
 
-      - name: Link Issue to GitHub Project (Development Section)
+      - name: Link Branch to Issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_ID: ${{ env.ISSUE_ID }}
-          PROJECT_ID: "YOUR_PROJECT_ID" # Replace with your actual project ID
+          BRANCH_NAME: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
         run: |
           if [[ -z "$ISSUE_ID" ]]; then
-            echo "Issue ID is empty. Skipping project linking."
+            echo "Issue ID is empty. Skipping branch linking."
             exit 0
           fi
 
-          # Properly format JSON mutation using jq (wrap IDs in double quotes)
-          MUTATION=$(jq -n --arg project "$PROJECT_ID" --arg content "$ISSUE_ID" \
-          '{"query": "mutation { addProjectV2ItemById(input: {projectId: \"\($project)\", contentId: \"\($content)\"}) { item { id } } }"}')
+          OWNER=$(echo $REPO | cut -d '/' -f1)
+          REPO_NAME=$(echo $REPO | cut -d '/' -f2)
+
+          echo "Linking branch $BRANCH_NAME to issue $ISSUE_ID"
+
+          MUTATION=$(jq -n --arg issue "$ISSUE_ID" --arg branch "$BRANCH_NAME" --arg repo "$REPO_NAME" \
+          '{"query": "mutation { createLinkedBranch(input: {issueId: \"\($issue)\", name: \"\($branch)\", repositoryName: \"\($repo)\"}) { linkedBranch { id } } }"}')
 
           echo "Debug: MUTATION=$MUTATION"
 
