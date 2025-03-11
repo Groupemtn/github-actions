@@ -65,12 +65,13 @@ jobs:
           fi
 
           echo "BRANCH_ID=$BRANCH_ID" >> $GITHUB_ENV
-      - name: Link branch to issue using GraphQL
+
+      - name: Link branch to issue using Hashed Query
         run: |
           curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                -H "Content-Type: application/json" \
                -d '{
-                 "query": "mutation LinkBranchToIssue($baseIssueOrPullRequestId: ID!, $linkingIds: [ID!]!) { addLinkedBranch(input: {issueId: $baseIssueOrPullRequestId, repositoryLinkedBranchIds: $linkingIds}) { clientMutationId } }",
+                 "query": "86b06a65f88de774689b60f84ddfc720",
                  "variables": {
                    "baseIssueOrPullRequestId": "'${{ env.ISSUE_ID }}'",
                    "linkingIds": ["'${{ env.BRANCH_ID }}'"]
