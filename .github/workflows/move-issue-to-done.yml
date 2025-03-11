@@ -1,0 +1,36 @@
+name: Move Issue to Done on PR Close
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  move-issue-to-done:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4 
+        
+      - name: Extract Issue Number from Branch
+        id: extract_issue
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+')
+
+          if [[ -z "$ISSUE_NUMBER" ]]; then
+            echo "No issue number found, skipping."
+            exit 0
+          fi
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+
+      - name: Move Issue to "In Review" Status
+        if: env.ISSUE_NUMBER != ''
+        uses: ./.github/actions/move-issue
+        with:
+          github_token: ${{ secrets.ORG_PROJECT_PAT }}
+          org: 'Groupemtn'
+          project_number: '16'
+          status_name: 'In Review'
+          issue_number: ${{ env.ISSUE_NUMBER }}
