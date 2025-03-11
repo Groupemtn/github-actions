@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4 
 
       - name: Extract Issue Number
-        uses: ./.github/actions/extract-issue  
+        uses: ./.github/actions/extract-issue-branch
 
       - name: Assign Issue to the Branch Creator
         if: env.ISSUE_NUMBER != ''
