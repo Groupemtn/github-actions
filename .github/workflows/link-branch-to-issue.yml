@@ -21,6 +21,21 @@ jobs:
           fi
 
           echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: Assign Issue to the Branch Creator
+        if: env.ISSUE_NUMBER != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUMBER=${{ env.ISSUE_NUMBER }}
+          REPO="${{ github.repository }}"
+          USER="${{ github.actor }}"
+
+          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/$REPO/issues/$ISSUE_NUMBER/assignees \
+            -d "{\"assignees\": [\"$USER\"]}"
 
       - name: Link Branch to GitHub Issue
         if: env.ISSUE_NUMBER != ''
@@ -31,10 +46,9 @@ jobs:
           BRANCH_NAME="${{ github.ref_name }}"
           REPO="${{ github.repository }}"
 
-          COMMENT_BODY="🚀 A new branch \`$BRANCH_NAME\` has been created for this issue."
+          COMMENT_BODY="🚀 A new branch [\`$BRANCH_NAME\`](https://github.com/$REPO/tree/$BRANCH_NAME) has been created for this issue."
 
           curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/$REPO/issues/$ISSUE_NUMBER/comments \
             -d "{\"body\": \"$COMMENT_BODY\"}"
-            
