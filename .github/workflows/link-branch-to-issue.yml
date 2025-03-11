@@ -65,16 +65,15 @@ jobs:
           fi
 
           echo "BRANCH_ID=$BRANCH_ID" >> $GITHUB_ENV
-      - name: Create Timeline Event to Link Branch
+      - name: Link branch to issue using GraphQL
         run: |
           curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                -H "Content-Type: application/json" \
-               -d "{
-                 \"event\": \"cross-referenced\",
-                 \"source\": {
-                   \"type\": \"branch\",
-                   \"repository\": \"tenuckii/workflow\",
-                   \"name\": \"${{ github.ref_name }}\"
+               -d '{
+                 "query": "mutation LinkBranchToIssue($baseIssueOrPullRequestId: ID!, $linkingIds: [ID!]!) { addLinkedBranch(input: {issueId: $baseIssueOrPullRequestId, repositoryLinkedBranchIds: $linkingIds}) { clientMutationId } }",
+                 "variables": {
+                   "baseIssueOrPullRequestId": "'${{ env.ISSUE_ID }}'",
+                   "linkingIds": ["'${{ env.BRANCH_ID }}'"]
                  }
-               }" \
-               "https://api.github.com/repos/tenuckii/workflow/issues/${{ env.ISSUE_NUMBER }}/timeline"
+               }' \
+               https://api.github.com/graphql
