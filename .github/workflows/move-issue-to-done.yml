@@ -26,12 +26,12 @@ jobs:
 
           echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
 
-      - name: Move Issue to "In Review" Status
+      - name: Move Issue to "Done" Status
         if: env.ISSUE_NUMBER != ''
         uses: ./.github/actions/move-issue
         with:
           github_token: ${{ secrets.ORG_PROJECT_PAT }}
           org: 'Groupemtn'
           project_number: '16'
-          status_name: 'In Review'
+          status_name: 'Done'
           issue_number: ${{ env.ISSUE_NUMBER }}
