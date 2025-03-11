@@ -9,16 +9,19 @@ jobs:
   move-issue-in-review:
     runs-on: ubuntu-latest
     steps:
-     
-      - name: Checkout Repository
-        uses: actions/checkout@v4 
-
-      - name: Extract Issue Number
-        uses: ./.github/actions/extract-issue  
+      - name: Extract Issue Number from Branch
+        id: extract_issue
+        run: |
+          ISSUE_NUMBER=$(echo "${{ github.head_ref }}" | grep -oE '[0-9]+' | head -n1)
+          if [ -z "$ISSUE_NUMBER" ]; then
+            echo "No issue number found in branch name."
+            exit 0
+          fi
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Move Issue to "In Review" Status
         if: env.ISSUE_NUMBER != ''
-        uses: ./.github/actions/move-issue-action
+        uses: ./.github/actions/move-issue
         with:
           github_token: ${{ secrets.ORG_PROJECT_PAT }}
           org: 'Groupemtn'
