@@ -49,7 +49,7 @@ jobs:
         id: normalize
         run: |
           NORMALIZED_BRANCH="${{ github.ref_name }}"
-          NORMALIZED_BRANCH=$(echo "$NORMALIZED_BRANCH" | sed 's/#/-/g')
+          NORMALIZED_BRANCH=$(echo "$NORMALIZED_BRANCH" | sed 's/#/-/g')  # Replace # with -
           echo "NORMALIZED_BRANCH=$NORMALIZED_BRANCH" >> $GITHUB_ENV
 
       - name: Get branch ID from GitHub API
@@ -70,6 +70,7 @@ jobs:
           fi
 
           echo "BRANCH_ID=$BRANCH_ID" >> $GITHUB_ENV
+
 
       - name: Link branch to issue
         run: |
