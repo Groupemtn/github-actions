@@ -45,24 +45,19 @@ jobs:
 
           echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
 
-      - name: Normalize Branch Name
-        id: normalize
-        run: |
-          NORMALIZED_BRANCH="${{ github.ref_name }}"
-          NORMALIZED_BRANCH=$(echo "$NORMALIZED_BRANCH" | sed 's/#/-/g')  # Replace # with -
-          echo "NORMALIZED_BRANCH=$NORMALIZED_BRANCH" >> $GITHUB_ENV
-
-      - name: Get branch ID from GitHub API
+      - name: Get branch ID from GitHub REST API
         id: get-branch-id
         run: |
+          BRANCH_NAME="linkbranch/#7"
+          ENCODED_BRANCH_NAME=$(echo "$BRANCH_NAME" | sed 's/#/%23/g')  # Encode #
+
           RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                       -H "Content-Type: application/json" \
-                      -d "{\"query\":\"query { repository(owner: \\\"tenuckii\\\", name: \\\"workflow\\\") { ref(qualifiedName: \\\"refs/heads/${{ env.NORMALIZED_BRANCH }}\\\") { id } } }\"}" \
-                      https://api.github.com/graphql)
+                      "https://api.github.com/repos/tenuckii/workflow/git/ref/heads/$ENCODED_BRANCH_NAME")
 
-          echo "GraphQL API Response: $RESPONSE"  # Debugging output
+          echo "REST API Response: $RESPONSE"  # Debugging output
 
-          BRANCH_ID=$(echo $RESPONSE | jq -r '.data.repository.ref.id')
+          BRANCH_ID=$(echo $RESPONSE | jq -r '.object.sha')  # Get branch SHA (GitHub's branch reference ID)
 
           if [[ "$BRANCH_ID" == "null" || -z "$BRANCH_ID" ]]; then
             echo "Branch ID not found. Skipping."
