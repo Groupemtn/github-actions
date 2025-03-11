@@ -25,20 +25,24 @@ jobs:
       #   uses: ./.github/actions/link-branch
       #   with:
       #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Get issue ID from GitHub API
         id: get-issue-id
         run: |
-          ISSUE_NUMBER=${{ env.ISSUE_NUMBER }}
           RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                       -H "Content-Type: application/json" \
-                      -d "{\"query\":\"query { repository(owner: tenucki, name: workflow) { issue(number: ${ISSUE_NUMBER}) { id } } }\"}" \
+                      -d "{\"query\":\"query { repository(owner: \\\"tenucki\\\", name: \\\"workflow\\\") { issue(number: ${{ env.ISSUE_NUMBER }}) { id } } }\"}" \
                       https://api.github.com/graphql)
+
+          echo "GraphQL API Response: $RESPONSE"  # Debugging
+
           ISSUE_ID=$(echo $RESPONSE | jq -r '.data.repository.issue.id')
-          if [[ "$ISSUE_ID" == "null" ]]; then
+
+          if [[ "$ISSUE_ID" == "null" || -z "$ISSUE_ID" ]]; then
             echo "Issue ID not found. Skipping."
             exit 0
           fi
+
           echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
 
       - name: Get branch ID from GitHub API
