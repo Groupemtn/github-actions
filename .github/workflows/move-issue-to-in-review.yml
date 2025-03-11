@@ -1,0 +1,27 @@
+name: Move Issue to In Review on PR
+
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  move-issue-in-review:
+    runs-on: ubuntu-latest
+    steps:
+     
+      - name: Checkout Repository
+        uses: actions/checkout@v4 
+
+      - name: Extract Issue Number
+        uses: ./.github/actions/extract-issue  
+
+      - name: Move Issue to "In Review" Status
+        if: env.ISSUE_NUMBER != ''
+        uses: ./.github/actions/move-issue-action
+        with:
+          github_token: ${{ secrets.ORG_PROJECT_PAT }}
+          org: 'Groupemtn'
+          project_number: '16'
+          status_name: 'In Review'
+          issue_number: ${{ env.ISSUE_NUMBER }}
