@@ -25,7 +25,6 @@ jobs:
       #   uses: ./.github/actions/link-branch
       #   with:
       #     github_token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Get issue ID from GitHub API
         id: get-issue-id
         run: |
@@ -41,9 +40,24 @@ jobs:
           fi
           echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
 
+      - name: Get branch ID from GitHub API
+        id: get-branch-id
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                      -H "Content-Type: application/json" \
+                      -d "{\"query\":\"query { repository(owner: \\\"OWNER\\\", name: \\\"REPO\\\") { ref(qualifiedName: \\\"refs/heads/${BRANCH_NAME}\\\") { id } } }\"}" \
+                      https://api.github.com/graphql)
+          BRANCH_ID=$(echo $RESPONSE | jq -r '.data.repository.ref.id')
+          if [[ "$BRANCH_ID" == "null" ]]; then
+            echo "Branch ID not found. Skipping."
+            exit 0
+          fi
+          echo "BRANCH_ID=$BRANCH_ID" >> $GITHUB_ENV
+
       - name: Link branch to issue
         run: |
           curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                -H "Content-Type: application/json" \
-               -d "{\"query\":\"1ed695200ca0b6cac0e012fd4926b664\",\"variables\":{\"baseIssueId\":\"${{ env.ISSUE_ID }}\",\"linkingIds\":[\"REF_kwDOOGyMlbhyZWZzL2hlYWRzL2xpbmticmFuY2gvIzc\"]}}" \
+               -d "{\"query\":\"mutation LinkBranchToIssue($baseIssueId: ID!, $linkingIds: [ID!]!) { linkRepositoryLinkedBranch(input: {issueId: $baseIssueId, repositoryLinkedBranchIds: $linkingIds}) { clientMutationId } }\",\"variables\":{\"baseIssueId\":\"${{ env.ISSUE_ID }}\",\"linkingIds\":[\"${{ env.BRANCH_ID }}\"]}}" \
                https://api.github.com/graphql
