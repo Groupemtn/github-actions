@@ -3,6 +3,8 @@ on:
   create:
     branches:
       - '*'
+  pull_request:
+    types: [opened]
 
 jobs:
   link-branch:
@@ -25,3 +27,16 @@ jobs:
         uses: ./.github/actions/link-branch
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Link PR to GitHub Issue
+        if: github.event_name == 'pull_request'
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          ISSUE_NUMBER=$(echo "${{ github.event.pull_request.head.ref }}" | grep -oE '#[0-9]+' | tr -d '#')
+          REPO="${{ github.repository }}"
+          COMMENT_BODY="🚀 A new pull request [#${PR_NUMBER}](https://github.com/$REPO/pull/$PR_NUMBER) has been opened for this issue."
+
+          curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/$REPO/issues/$ISSUE_NUMBER/comments \
+            -d "{\"body\": \"$COMMENT_BODY\"}"
