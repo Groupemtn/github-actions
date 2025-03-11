@@ -67,15 +67,15 @@ jobs:
           echo "BRANCH_ID=$BRANCH_ID" >> $GITHUB_ENV
 
 
-      - name: Link branch to issue
+      - name: Add Assignee to Issue (Alternative Action)
         run: |
           curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                -H "Content-Type: application/json" \
                -d '{
-                 "query": "mutation LinkBranchToIssue($baseIssueId: ID!, $linkingIds: [ID!]!) { linkRepositoryLinkedBranch(input: {issueId: $baseIssueId, repositoryLinkedBranchIds: $linkingIds}) { clientMutationId } }",
+                 "query": "mutation AddAssignee($issueId: ID!, $assignee: String!) { addAssigneesToAssignable(input: {assignableId: $issueId, assigneeIds: [$assignee]}) { clientMutationId } }",
                  "variables": {
-                   "baseIssueId": "'${{ env.ISSUE_ID }}'",
-                   "linkingIds": ["'${{ env.BRANCH_ID }}'"]
+                   "issueId": "'${{ env.ISSUE_ID }}'",
+                   "assignee": "YOUR_GITHUB_USER_ID"
                  }
                }' \
                https://api.github.com/graphql
