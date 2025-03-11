@@ -8,26 +8,102 @@ jobs:
   link-branch:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4 
+      # - name: Checkout Repository
+      #   uses: actions/checkout@v4 
 
-      - name: Extract Issue Number
-        uses: ./.github/actions/extract-issue  
+      # - name: Extract Issue Number
+      #   uses: ./.github/actions/extract-issue  
 
-      - name: Assign Issue to the Branch Creator
-        if: env.ISSUE_NUMBER != ''
-        uses: ./.github/actions/assign-issue
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Assign Issue to the Branch Creator
+      #   if: env.ISSUE_NUMBER != ''
+      #   uses: ./.github/actions/assign-issue
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Link Branch to Issue
-        if: env.ISSUE_NUMBER != ''
-        uses: ./.github/actions/link-branch
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Link Branch to Issue
+      #   if: env.ISSUE_NUMBER != ''
+      #   uses: ./.github/actions/link-branch
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Fetch Issue ID using GraphQL
-        id: fetch-issue-id
+      # - name: Fetch Issue ID using GraphQL
+      #   id: fetch-issue-id
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     REPO: ${{ github.repository }}
+      #     ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
+      #   run: |
+      #     OWNER=$(echo $REPO | cut -d '/' -f1)
+      #     REPO_NAME=$(echo $REPO | cut -d '/' -f2)
+
+      #     echo "Debug: OWNER=$OWNER"
+      #     echo "Debug: REPO_NAME=$REPO_NAME"
+      #     echo "Debug: ISSUE_NUMBER=$ISSUE_NUMBER"
+
+      #     QUERY=$(jq -n --arg owner "$OWNER" --arg repo "$REPO_NAME" --argjson issue "$ISSUE_NUMBER" \
+      #     '{"query": "query { repository(owner: \"\($owner)\", name: \"\($repo)\") { issue(number: \($issue)) { id } } }"}')
+
+      #     echo "Debug: QUERY=$QUERY"
+
+      #     RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+      #                     -H "Content-Type: application/json" \
+      #                     -X POST -d "$QUERY" https://api.github.com/graphql)
+
+      #     echo "Debug: RESPONSE=$RESPONSE"
+
+      #     ISSUE_ID=$(echo "$RESPONSE" | jq -r '.data.repository.issue.id')
+
+      #     if [[ "$ISSUE_ID" == "null" || -z "$ISSUE_ID" ]]; then
+      #       echo "Issue not found, skipping."
+      #       exit 0
+      #     fi
+
+      #     echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
+
+      # - name: Link Branch to Issue
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     ISSUE_ID: ${{ env.ISSUE_ID }}
+      #     BRANCH_NAME: ${{ github.ref_name }}
+      #     REPO: ${{ github.repository }}
+      #   run: |
+      #     if [[ -z "$ISSUE_ID" ]]; then
+      #       echo "Issue ID is empty. Skipping branch linking."
+      #       exit 0
+      #     fi
+
+      #     OWNER=$(echo $REPO | cut -d '/' -f1)
+      #     REPO_NAME=$(echo $REPO | cut -d '/' -f2)
+
+      #     echo "Linking branch $BRANCH_NAME to issue $ISSUE_ID"
+
+      #     MUTATION=$(jq -n --arg issue "$ISSUE_ID" --arg branch "$BRANCH_NAME" --arg repo "$REPO_NAME" \
+      #     '{"query": "mutation { createLinkedBranch(input: {issueId: \"\($issue)\", name: \"\($branch)\", repositoryName: \"\($repo)\"}) { linkedBranch { id } } }"}')
+
+      #     echo "Debug: MUTATION=$MUTATION"
+
+      #     RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+      #                       -H "Content-Type: application/json" \
+      #                       -X POST -d "$MUTATION" https://api.github.com/graphql)
+
+      #     echo "Response: $RESPONSE"
+
+      - name: Extract Issue Number from Branch Name
+        id: extract-issue
+        shell: bash
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+')
+
+          if [[ -z "$ISSUE_NUMBER" ]]; then
+            echo "No issue number found, skipping."
+            exit 0
+          fi
+
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+
+      - name: Fetch Issue and Repository IDs
+        id: fetch-ids
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -36,14 +112,10 @@ jobs:
           OWNER=$(echo $REPO | cut -d '/' -f1)
           REPO_NAME=$(echo $REPO | cut -d '/' -f2)
 
-          echo "Debug: OWNER=$OWNER"
-          echo "Debug: REPO_NAME=$REPO_NAME"
-          echo "Debug: ISSUE_NUMBER=$ISSUE_NUMBER"
+          echo "Fetching Issue ID and Repository ID"
 
           QUERY=$(jq -n --arg owner "$OWNER" --arg repo "$REPO_NAME" --argjson issue "$ISSUE_NUMBER" \
-          '{"query": "query { repository(owner: \"\($owner)\", name: \"\($repo)\") { issue(number: \($issue)) { id } } }"}')
-
-          echo "Debug: QUERY=$QUERY"
+          '{"query": "query { repository(owner: \"\($owner)\", name: \"\($repo)\") { id, issue(number: \($issue)) { id } } }"}')
 
           RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
                           -H "Content-Type: application/json" \
@@ -52,33 +124,63 @@ jobs:
           echo "Debug: RESPONSE=$RESPONSE"
 
           ISSUE_ID=$(echo "$RESPONSE" | jq -r '.data.repository.issue.id')
+          REPOSITORY_ID=$(echo "$RESPONSE" | jq -r '.data.repository.id')
 
-          if [[ "$ISSUE_ID" == "null" || -z "$ISSUE_ID" ]]; then
-            echo "Issue not found, skipping."
+          if [[ "$ISSUE_ID" == "null" || -z "$ISSUE_ID" || "$REPOSITORY_ID" == "null" || -z "$REPOSITORY_ID" ]]; then
+            echo "Issue or Repository ID not found, skipping."
             exit 0
           fi
 
           echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
+          echo "REPOSITORY_ID=$REPOSITORY_ID" >> $GITHUB_ENV
+
+      - name: Fetch Latest Commit SHA
+        id: fetch-commit-sha
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          OWNER=$(echo $REPO | cut -d '/' -f1)
+          REPO_NAME=$(echo $REPO | cut -d '/' -f2)
+
+          echo "Fetching latest commit SHA for branch $BRANCH_NAME"
+
+          QUERY=$(jq -n --arg owner "$OWNER" --arg repo "$REPO_NAME" --arg branch "$BRANCH_NAME" \
+          '{"query": "query { repository(owner: \"\($owner)\", name: \"\($repo)\") { ref(qualifiedName: \"refs/heads/\($branch)\") { target { oid } } } }"}')
+
+          RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+                          -H "Content-Type: application/json" \
+                          -X POST -d "$QUERY" https://api.github.com/graphql)
+
+          echo "Debug: RESPONSE=$RESPONSE"
+
+          COMMIT_SHA=$(echo "$RESPONSE" | jq -r '.data.repository.ref.target.oid')
+
+          if [[ "$COMMIT_SHA" == "null" || -z "$COMMIT_SHA" ]]; then
+            echo "Commit SHA not found, skipping."
+            exit 0
+          fi
+
+          echo "COMMIT_SHA=$COMMIT_SHA" >> $GITHUB_ENV
 
       - name: Link Branch to Issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_ID: ${{ env.ISSUE_ID }}
+          REPOSITORY_ID: ${{ env.REPOSITORY_ID }}
+          COMMIT_SHA: ${{ env.COMMIT_SHA }}
           BRANCH_NAME: ${{ github.ref_name }}
-          REPO: ${{ github.repository }}
         run: |
-          if [[ -z "$ISSUE_ID" ]]; then
-            echo "Issue ID is empty. Skipping branch linking."
+          if [[ -z "$ISSUE_ID" || -z "$REPOSITORY_ID" || -z "$COMMIT_SHA" ]]; then
+            echo "Required IDs missing. Skipping branch linking."
             exit 0
           fi
 
-          OWNER=$(echo $REPO | cut -d '/' -f1)
-          REPO_NAME=$(echo $REPO | cut -d '/' -f2)
-
           echo "Linking branch $BRANCH_NAME to issue $ISSUE_ID"
 
-          MUTATION=$(jq -n --arg issue "$ISSUE_ID" --arg branch "$BRANCH_NAME" --arg repo "$REPO_NAME" \
-          '{"query": "mutation { createLinkedBranch(input: {issueId: \"\($issue)\", name: \"\($branch)\", repositoryName: \"\($repo)\"}) { linkedBranch { id } } }"}')
+          MUTATION=$(jq -n --arg issue "$ISSUE_ID" --arg branch "$BRANCH_NAME" --arg repo "$REPOSITORY_ID" --arg oid "$COMMIT_SHA" \
+          '{"query": "mutation { createLinkedBranch(input: {issueId: \"\($issue)\", name: \"\($branch)\", repositoryId: \"\($repo)\", oid: \"\($oid)\"}) { linkedBranch { id } } }"}')
 
           echo "Debug: MUTATION=$MUTATION"
 
