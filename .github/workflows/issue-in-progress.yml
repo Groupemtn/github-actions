@@ -28,12 +28,11 @@ jobs:
       - name: Move Issue to "In Progress"
         if: steps.extract_issue.outputs.issue_number != ''
         uses: actions/github-script@v7
-        env:
-          GITHUB_TOKEN: ${{ secrets.ORG_PAT }}
         with:
+          github-token: ${{ secrets.ORG_PROJECT_PAT }}
           script: |
             const issueNumber = ${{ steps.extract_issue.outputs.issue_number }};
-            const projectNumber = 16; // your org-level project number
+            const projectNumber = 16;
             const org = 'Groupemtn';
             const inProgressStatusName = 'In Progress';
             const owner = context.repo.owner;
