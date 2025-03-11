@@ -26,18 +26,51 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Link Branch to Issue
+      
+      - name: Fetch Issue ID using GraphQL
+        id: fetch-issue-id
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ env.ISSUE_NUMBER }}
         run: |
-          ISSUE_NUMBER="${{ env.ISSUE_NUMBER }}"
-          BRANCH_NAME="${{ github.ref_name }}"
-          REPO_URL="https://github.com/${{ github.repository }}"
-          
-          echo "Linking branch $BRANCH_NAME to issue #$ISSUE_NUMBER"
+          QUERY='
+          {
+            repository(owner: "'$(echo $REPO | cut -d '/' -f1)'", name: "'$(echo $REPO | cut -d '/' -f2)'") {
+              issue(number: '$ISSUE_NUMBER') {
+                id
+              }
+            }
+          }'
+          ISSUE_ID=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+                          -H "Content-Type: application/json" \
+                          -X POST -d '{"query": "'"$QUERY"'"}' https://api.github.com/graphql \
+                          | jq -r '.data.repository.issue.id')
 
-          curl -X POST -H "Authorization: Bearer $GH_TOKEN" \
-               -H "Accept: application/vnd.github.v3+json" \
-               https://api.github.com/repos/$REPO/issues/$ISSUE_NUMBER/timeline \
-               -d "{\"event\": \"cross-referenced\", \"source\": {\"type\": \"branch\", \"branch\": {\"name\": \"$BRANCH_NAME\", \"repo\": \"$REPO\" }}}"
+          if [[ "$ISSUE_ID" == "null" || -z "$ISSUE_ID" ]]; then
+            echo "Issue not found, skipping."
+            exit 0
+          fi
+
+          echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
+
+      - name: Link Branch to Issue in Development Section
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_ID: ${{ env.ISSUE_ID }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          MUTATION='
+          mutation {
+            addProjectV2ItemById(input: {projectId: "YOUR_PROJECT_ID", contentId: "'"$ISSUE_ID"'"}) {
+              item {
+                id
+              }
+            }
+          }'
+          RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+                          -H "Content-Type: application/json" \
+                          -X POST -d '{"query": "'"$MUTATION"'"}' https://api.github.com/graphql)
+
+          echo "Response: $RESPONSE"
