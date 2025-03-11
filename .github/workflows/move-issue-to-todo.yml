@@ -1,0 +1,19 @@
+name: Move Issue to Todo on Creation
+
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  move-issue-to-todo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move Issue to "Todo"
+        uses: ./.github/actions/move-issue-action
+        with:
+          github_token: ${{ secrets.ORG_PROJECT_PAT }}
+          org: 'Groupemtn'
+          project_number: '16'
+          status_name: 'Todo'
+          issue_number: ${{ github.event.issue.number }}
