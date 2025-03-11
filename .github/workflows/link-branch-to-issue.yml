@@ -26,63 +26,24 @@ jobs:
       #   with:
       #     github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Fetch Latest Commit SHA
-        id: fetch-sha
-        run: |
-          REPO="${{ github.repository }}"
-          BRANCH_NAME="${{ github.ref_name }}"
-          BRANCH_NAME_ENCODED=$(echo "${BRANCH_NAME}" | sed 's/#/%23/g')
-
-          echo "🔍 Fetching latest commit SHA for branch '$BRANCH_NAME'..."
-
-          COMMIT_SHA=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/$REPO/git/ref/heads/$BRANCH_NAME_ENCODED" | jq -r '.object.sha')
-
-          if [[ "$COMMIT_SHA" == "null" || -z "$COMMIT_SHA" ]]; then
-            echo "❌ Could not fetch commit SHA. Attempting alternative method..."
-
-            # Alternative: Fetch all branch refs and filter
-            COMMIT_SHA=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/$REPO/git/refs/heads" | \
-              jq -r ".[] | select(.ref == \"refs/heads/$BRANCH_NAME\") | .object.sha")
-
-            if [[ "$COMMIT_SHA" == "null" || -z "$COMMIT_SHA" ]]; then
-              echo "❌ Still could not fetch commit SHA. Exiting..."
-              exit 1
-            fi
-          fi
-
-          echo "✅ Latest Commit SHA: $COMMIT_SHA"
-          echo "COMMIT_SHA=$COMMIT_SHA" >> $GITHUB_ENV
-          
-      - name: Link Branch to Issue in Development Section
-        if: env.ISSUE_NUMBER != ''
+      - name: Get issue ID from GitHub API
+        id: get-issue-id
         run: |
           ISSUE_NUMBER=${{ env.ISSUE_NUMBER }}
-          BRANCH_NAME="${{ github.ref_name }}"
-          REPO="${{ github.repository }}"
-          COMMIT_SHA="${{ env.COMMIT_SHA }}"
-
-          echo "🔍 Fetching Issue ID for Issue #$ISSUE_NUMBER..."
-          
-          # Fetch issue ID using GraphQL
-          ISSUE_ID=$(curl -s -X POST -H "Authorization: bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"query\": \"query { repository(owner: \\\"${REPO%/*}\\\", name: \\\"${REPO#*/}\\\") { issue(number: $ISSUE_NUMBER) { id } } }\"}" \
-            https://api.github.com/graphql | jq -r '.data.repository.issue.id')
-
-          if [[ "$ISSUE_ID" == "null" || -z "$ISSUE_ID" ]]; then
-            echo "❌ Issue ID not found. Skipping..."
+          RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                      -H "Content-Type: application/json" \
+                      -d "{\"query\":\"query { repository(owner: \\\"OWNER\\\", name: \\\"REPO\\\") { issue(number: ${ISSUE_NUMBER}) { id } } }\"}" \
+                      https://api.github.com/graphql)
+          ISSUE_ID=$(echo $RESPONSE | jq -r '.data.repository.issue.id')
+          if [[ "$ISSUE_ID" == "null" ]]; then
+            echo "Issue ID not found. Skipping."
             exit 0
           fi
+          echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
 
-          echo "✅ Issue ID: $ISSUE_ID"
-
-          # Link Branch to Issue in Development Section
-          echo "🔗 Linking branch '$BRANCH_NAME' to Issue #$ISSUE_NUMBER..."
-          RESPONSE=$(curl -s -X POST -H "Authorization: bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"query\": \"mutation { createLinkedBranch(input: {issueId: \\\"$ISSUE_ID\\\", name: \\\"$BRANCH_NAME\\\", oid: \\\"$COMMIT_SHA\\\"}) { clientMutationId } }\"}" \
-            https://api.github.com/graphql)
-
-          echo "📝 Response: $RESPONSE"
+      - name: Link branch to issue
+        run: |
+          curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+               -H "Content-Type: application/json" \
+               -d "{\"query\":\"1ed695200ca0b6cac0e012fd4926b664\",\"variables\":{\"baseIssueId\":\"${{ env.ISSUE_ID }}\",\"linkingIds\":[\"REF_kwDOOGyMlbhyZWZzL2hlYWRzL2xpbmticmFuY2gvIzc\"]}}" \
+               https://api.github.com/graphql
