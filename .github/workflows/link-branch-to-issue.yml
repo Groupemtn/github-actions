@@ -25,3 +25,19 @@ jobs:
         uses: ./.github/actions/link-branch
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Link Branch to Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          ISSUE_NUMBER="${{ env.ISSUE_NUMBER }}"
+          BRANCH_NAME="${{ github.ref_name }}"
+          REPO_URL="https://github.com/${{ github.repository }}"
+          
+          echo "Linking branch $BRANCH_NAME to issue #$ISSUE_NUMBER"
+
+          curl -X POST -H "Authorization: Bearer $GH_TOKEN" \
+               -H "Accept: application/vnd.github.v3+json" \
+               https://api.github.com/repos/$REPO/issues/$ISSUE_NUMBER/timeline \
+               -d "{\"event\": \"cross-referenced\", \"source\": {\"type\": \"branch\", \"branch\": {\"name\": \"$BRANCH_NAME\", \"repo\": \"$REPO\" }}}"
