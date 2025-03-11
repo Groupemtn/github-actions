@@ -65,12 +65,16 @@ jobs:
           fi
 
           echo "BRANCH_ID=$BRANCH_ID" >> $GITHUB_ENV
-
-      - name: Link branch to issue (Create comment)
+      - name: Link branch to issue using GraphQL
         run: |
           curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                -H "Content-Type: application/json" \
                -d "{
-                 \"body\": \"🔗 This branch [${{ github.ref_name }}](https://github.com/tenuckii/workflow/tree/${{ github.ref_name }}) has been created and is linked to this issue.\"
+                 \"query\": \"86b06a65f88de774689b60f84ddfc720\",
+                 \"variables\": {
+                   \"baseIssueOrPullRequestId\": \"${{ env.ISSUE_ID }}\",
+                   \"linkingIds\": [\"${{ env.BRANCH_ID }}\"]
+                 }
                }" \
-               "https://api.github.com/repos/tenuckii/workflow/issues/${{ env.ISSUE_NUMBER }}/comments"
+               https://api.github.com/graphql
+
