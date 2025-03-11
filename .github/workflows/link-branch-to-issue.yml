@@ -14,67 +14,14 @@ jobs:
       - name: Extract Issue Number
         uses: ./.github/actions/extract-issue  
 
-      # - name: Assign Issue to the Branch Creator
-      #   if: env.ISSUE_NUMBER != ''
-      #   uses: ./.github/actions/assign-issue
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Assign Issue to the Branch Creator
+        if: env.ISSUE_NUMBER != ''
+        uses: ./.github/actions/assign-issue
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      # - name: Link Branch to Issue
-      #   if: env.ISSUE_NUMBER != ''
-      #   uses: ./.github/actions/link-branch
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get issue ID from GitHub API
-        id: get-issue-id
-        run: |
-          RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                      -H "Content-Type: application/json" \
-                      -d "{\"query\":\"query { repository(owner: \\\"tenuckii\\\", name: \\\"workflow\\\") { issue(number: ${{ env.ISSUE_NUMBER }}) { id } } }\"}" \
-                      https://api.github.com/graphql)
-
-          echo "GraphQL API Response: $RESPONSE"  # Debugging
-
-          ISSUE_ID=$(echo $RESPONSE | jq -r '.data.repository.issue.id')
-
-          if [[ "$ISSUE_ID" == "null" || -z "$ISSUE_ID" ]]; then
-            echo "Issue ID not found. Skipping."
-            exit 0
-          fi
-
-          echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
-
-      - name: Get branch ID from GitHub REST API
-        id: get-branch-id
-        run: |
-          BRANCH_NAME="linkbranch/#7"
-          ENCODED_BRANCH_NAME=$(echo "$BRANCH_NAME" | sed 's/#/%23/g')  # Encode #
-
-          RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                      -H "Content-Type: application/json" \
-                      "https://api.github.com/repos/tenuckii/workflow/git/ref/heads/$ENCODED_BRANCH_NAME")
-
-          echo "REST API Response: $RESPONSE"  # Debugging output
-
-          BRANCH_ID=$(echo $RESPONSE | jq -r '.object.sha')  # Get branch SHA (GitHub's branch reference ID)
-
-          if [[ "$BRANCH_ID" == "null" || -z "$BRANCH_ID" ]]; then
-            echo "Branch ID not found. Skipping."
-            exit 0
-          fi
-
-          echo "BRANCH_ID=$BRANCH_ID" >> $GITHUB_ENV
-
-      - name: Link branch to issue using Hashed Query
-        run: |
-          curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-               -H "Content-Type: application/json" \
-               -d '{
-                 "query": "86b06a65f88de774689b60f84ddfc720",
-                 "variables": {
-                   "baseIssueOrPullRequestId": "'${{ env.ISSUE_ID }}'",
-                   "linkingIds": ["'${{ env.BRANCH_ID }}'"]
-                 }
-               }' \
-               https://api.github.com/graphql
+      - name: Link Branch to Issue
+        if: env.ISSUE_NUMBER != ''
+        uses: ./.github/actions/link-branch
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
