@@ -1,0 +1,132 @@
+name: Move Issue to In Progress
+
+on:
+  push:
+    branches:
+      - '**'  # Adjust this pattern to limit to specific branches if desired
+
+jobs:
+  move-issue-to-in-progress:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      projects: write
+
+    steps:
+      - name: Extract Issue Number
+        id: extract_issue
+        run: |
+          ISSUE_NUMBER=$(echo "${{ github.ref_name }}" | grep -oE '[0-9]+' | head -n1)
+          if [ -z "$ISSUE_NUMBER" ]; then
+            echo "No issue number found in branch name."
+            exit 0
+          fi
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Move Issue to "In Progress"
+        if: steps.extract_issue.outputs.issue_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = ${{ steps.extract_issue.outputs.issue_number }};
+            const projectNumber = YOUR_PROJECT_NUMBER;  // Replace this with your GitHub Project number
+            const inProgressStatusName = 'In Progress'; // Adjust if your column name is different
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Fetch the project
+            const { organization, repository } = context.payload;
+            const project = await github.graphql(`
+              query($owner: String!, $repo: String!, $projectNumber: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  projectV2(number: $projectNumber) {
+                    id
+                    fields(first: 20) {
+                      nodes {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `, { owner, repo, projectNumber });
+
+            const projectId = project.repository.projectV2.id;
+            const statusField = project.repository.projectV2.fields.nodes.find(f => f.name === "Status");
+
+            const inProgressOption = statusField.options.find(opt => opt.name === inProgressStatusName);
+
+            // Find project item
+            const items = await github.graphql(`
+              query($projectId: ID!, $issueNumber: Int!, $repo: String!, $owner: String!) {
+                repository(owner: $owner, name: $repo) {
+                  issue(number: $issueNumber) {
+                    id
+                    projectItems(first: 10) {
+                      nodes {
+                        id
+                        project {
+                          id
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `, { projectId, issueNumber, owner, repo });
+
+            const issue = items.repository.issue;
+
+            if (!issue) {
+              console.log('Issue not found');
+              return;
+            }
+
+            let item = issue.projectItems.nodes.find(n => n.project.id === projectId);
+
+            if (!item) {
+              // Add issue to project if not already present
+              const addResp = await github.graphql(`
+                mutation($projectId: ID!, $contentId: ID!) {
+                  addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                    item {
+                      id
+                    }
+                  }
+                }
+              `, { projectId, contentId: issue.id });
+
+              item = addResp.addProjectV2ItemById.item;
+            }
+
+            // Update status to In Progress
+            await github.graphql(`
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId,
+                  itemId: $itemId,
+                  fieldId: $fieldId,
+                  value: {singleSelectOptionId: $optionId}
+                }) {
+                  projectV2Item {
+                    id
+                  }
+                }
+              }
+            `, {
+              projectId,
+              itemId: item.id,
+              fieldId: statusField.id,
+              optionId: inProgressOption.id,
+            });
+
+            console.log(`Moved issue #${issueNumber} to "${inProgressStatusName}".`);
