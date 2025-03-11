@@ -30,7 +30,7 @@ jobs:
 
       - name: Move Issue to Project Status
         if: env.ISSUE_NUMBER != ''
-        uses: ./.github/actions/move-issue-action
+        uses: ./.github/actions/move-issue
         with:
           github_token: ${{ secrets.ORG_PROJECT_PAT }}
           org: 'Groupemtn'
