@@ -71,9 +71,9 @@ jobs:
             exit 0
           fi
 
-          # Properly format JSON mutation using jq
+          # Properly format JSON mutation using jq (wrap IDs in double quotes)
           MUTATION=$(jq -n --arg project "$PROJECT_ID" --arg content "$ISSUE_ID" \
-          '{"query": "mutation { addProjectV2ItemById(input: {projectId: \($project), contentId: \($content)}) { item { id } } }"}')
+          '{"query": "mutation { addProjectV2ItemById(input: {projectId: \"\($project)\", contentId: \"\($content)\"}) { item { id } } }"}')
 
           echo "Debug: MUTATION=$MUTATION"
 
