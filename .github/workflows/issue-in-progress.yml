@@ -1,4 +1,4 @@
-name: Move Issue to In Progress (Org Project)
+name: Move Issue to In Progress
 
 on:
   push:
@@ -9,7 +9,6 @@ permissions:
   contents: read
   issues: write
   pull-requests: write
-  repository-projects: write
 
 jobs:
   move-issue-to-in-progress:
@@ -29,12 +28,14 @@ jobs:
       - name: Move Issue to "In Progress"
         if: steps.extract_issue.outputs.issue_number != ''
         uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.ORG_PAT }}
         with:
           script: |
             const issueNumber = ${{ steps.extract_issue.outputs.issue_number }};
-            const projectNumber = 16; // your organization-level project number
-            const inProgressStatusName = 'In Progress';
+            const projectNumber = 16; // your org-level project number
             const org = 'Groupemtn';
+            const inProgressStatusName = 'In Progress';
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
