@@ -32,7 +32,7 @@ jobs:
         with:
           script: |
             const issueNumber = ${{ steps.extract_issue.outputs.issue_number }};
-            const projectNumber = YOUR_PROJECT_NUMBER; // <-- Adjust your project number here
+            const projectNumber = 3; // <-- Adjust your project number here
             const inProgressStatusName = 'In Progress';
             const owner = context.repo.owner;
             const repo = context.repo.repo;
