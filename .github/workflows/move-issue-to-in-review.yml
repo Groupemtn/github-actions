@@ -9,6 +9,9 @@ jobs:
   move-issue-in-review:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4 
+        
       - name: Extract Issue Number from Branch
         id: extract_issue
         run: |
