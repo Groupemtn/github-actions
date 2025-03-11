@@ -41,7 +41,7 @@ jobs:
           echo "Debug: ISSUE_NUMBER=$ISSUE_NUMBER"
 
           QUERY=$(jq -n --arg owner "$OWNER" --arg repo "$REPO_NAME" --argjson issue "$ISSUE_NUMBER" \
-          '{query: "query { repository(owner: \($owner), name: \($repo)) { issue(number: \($issue)) { id } } }"}')
+          '{"query": "query { repository(owner: \"\($owner)\", name: \"\($repo)\") { issue(number: \($issue)) { id } } }"}')
 
           echo "Debug: QUERY=$QUERY"
 
