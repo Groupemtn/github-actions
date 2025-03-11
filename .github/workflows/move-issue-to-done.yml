@@ -6,26 +6,31 @@ on:
       - closed
 
 jobs:
-  move-issue-to-done:
-    if: github.event.pull_request.merged == true
+  move-issue-in-review:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4 
+        
       - name: Extract Issue Number from Branch
         id: extract_issue
         run: |
-          ISSUE_NUMBER=$(echo "${{ github.head_ref }}" | grep -oE '[0-9]+' | head -n1)
-          if [ -z "$ISSUE_NUMBER" ]; then
-            echo "No issue number found in branch name."
+          BRANCH_NAME="${{ github.head_ref }}"
+          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+')
+
+          if [[ -z "$ISSUE_NUMBER" ]]; then
+            echo "No issue number found, skipping."
             exit 0
           fi
-          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
 
-      - name: Move Issue to "Done" Status
-        if: steps.extract_issue.outputs.issue_number != ''
-        uses: ./.github/actions/move-issue-action
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+
+      - name: Move Issue to "In Review" Status
+        if: env.ISSUE_NUMBER != ''
+        uses: ./.github/actions/move-issue
         with:
           github_token: ${{ secrets.ORG_PROJECT_PAT }}
           org: 'Groupemtn'
           project_number: '16'
           status_name: 'Done'
-          issue_number: ${{ steps.extract_issue.outputs.issue_number }}
+          issue_number: ${{ env.ISSUE_NUMBER }}
