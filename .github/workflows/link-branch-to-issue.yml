@@ -25,3 +25,13 @@ jobs:
         uses: ./.github/actions/link-branch
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Move Issue to Project Status
+        if: env.ISSUE_NUMBER != ''
+        uses: ./.github/actions/move-issue-action
+        with:
+          github_token: ${{ secrets.ORG_PROJECT_PAT }}
+          org: 'Groupemtn'
+          project_number: '16'
+          status_name: 'In Progress'
+          issue_number: env.ISSUE_NUMBER
