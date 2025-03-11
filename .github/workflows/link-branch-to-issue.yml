@@ -1,7 +1,4 @@
 name: Link Branch to Issue
-env:
-  GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-
 on:
   create:
     branches:
@@ -11,49 +8,17 @@ jobs:
   link-branch:
     runs-on: ubuntu-latest
     steps:
-      - name: Extract Issue Number from Branch Name
-        id: extract-issue
-        run: |
-          BRANCH_NAME="${{ github.ref_name }}"
-          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -oE '#[0-9]+' | tr -d '#')
-
-          if [[ -z "$ISSUE_NUMBER" ]]; then
-            echo "No issue number found, skipping."
-            exit 0
-          fi
-
-          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+      - name: Extract Issue Number
+        uses: ./.github/actions/extract-issue
 
       - name: Assign Issue to the Branch Creator
         if: env.ISSUE_NUMBER != ''
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ISSUE_NUMBER=${{ env.ISSUE_NUMBER }}
-          REPO="${{ github.repository }}"
-          USER="${{ github.actor }}"
+        uses: ./.github/actions/assign-issue
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-          curl -L -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/$REPO/issues/$ISSUE_NUMBER/assignees \
-            -d "{\"assignees\": [\"$USER\"]}"
-
-
-      - name: Link Branch to GitHub Issue
+      - name: Link Branch to Issue
         if: env.ISSUE_NUMBER != ''
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ISSUE_NUMBER=${{ env.ISSUE_NUMBER }}
-          BRANCH_NAME="${{ github.ref_name }}"
-          REPO="${{ github.repository }}"
-
-          COMMENT_BODY="🚀 A new branch [\`$BRANCH_NAME\`](https://github.com/$REPO/tree/$BRANCH_NAME) has been created for this issue."
-
-          curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/$REPO/issues/$ISSUE_NUMBER/comments \
-            -d "{\"body\": \"$COMMENT_BODY\"}"
+        uses: ./.github/actions/link-branch
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
