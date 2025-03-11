@@ -71,5 +71,11 @@ jobs:
         run: |
           curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                -H "Content-Type: application/json" \
-               -d "{\"query\":\"mutation LinkBranchToIssue($baseIssueId: ID!, $linkingIds: [ID!]!) { linkRepositoryLinkedBranch(input: {issueId: $baseIssueId, repositoryLinkedBranchIds: $linkingIds}) { clientMutationId } }\",\"variables\":{\"baseIssueId\":\"${{ env.ISSUE_ID }}\",\"linkingIds\":[\"${{ env.BRANCH_ID }}\"]}}" \
+               -d '{
+                 "query": "mutation LinkBranchToIssue($baseIssueId: ID!, $linkingIds: [ID!]!) { linkRepositoryLinkedBranch(input: {issueId: $baseIssueId, repositoryLinkedBranchIds: $linkingIds}) { clientMutationId } }",
+                 "variables": {
+                   "baseIssueId": "'${{ env.ISSUE_ID }}'",
+                   "linkingIds": ["'${{ env.BRANCH_ID }}'"]
+                 }
+               }' \
                https://api.github.com/graphql
