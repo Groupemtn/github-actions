@@ -9,7 +9,7 @@ permissions:
   contents: read
   issues: write
   pull-requests: write
-  organization-projects: write  # <-- Correct permission
+  repository-projects: write  # ✅ correct permission
 
 jobs:
   move-issue-to-in-progress:
@@ -32,11 +32,12 @@ jobs:
         with:
           script: |
             const issueNumber = ${{ steps.extract_issue.outputs.issue_number }};
-            const projectNumber = 16; // Your project number from URL
-            const inProgressStatusName = 'In Progress';
+            const projectNumber = 16; // your project number
             const org = 'Groupemtn';
+            const inProgressStatusName = 'In Progress';
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+
             const project = await github.graphql(`
               query($org: String!, $projectNumber: Int!) {
                 organization(login: $org) {
@@ -57,7 +58,7 @@ jobs:
                   }
                 }
               }
-            `, { org, projectNumber });
+            `, { org: 'Groupemtn', projectNumber: 16 });
 
             const projectId = project.organization.projectV2.id;
             const statusField = project.organization.projectV2.fields.nodes.find(f => f.name === "Status");
@@ -93,7 +94,9 @@ jobs:
               const addResp = await github.graphql(`
                 mutation($projectId: ID!, $contentId: ID!) {
                   addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
-                    item { id }
+                    item {
+                      id
+                    }
                   }
                 }
               `, { projectId, contentId: issue.id });
@@ -109,14 +112,10 @@ jobs:
                   fieldId: $fieldId,
                   value: {singleSelectOptionId: $optionId}
                 }) {
-                  projectV2Item { id }
+                  projectV2Item {
+                    id
+                  }
                 }
               }
             `, {
-              projectId,
-              itemId: item.id,
-              fieldId: statusField.id,
-              optionId: inProgressOption.id,
-            });
-
-            console.log(`Moved issue #${issueNumber} to "In Progress".`);
+            
