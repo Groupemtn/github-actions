@@ -1,0 +1,31 @@
+name: Move Issue to Done on PR Close
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  move-issue-to-done:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract Issue Number from Branch
+        id: extract_issue
+        run: |
+          ISSUE_NUMBER=$(echo "${{ github.head_ref }}" | grep -oE '[0-9]+' | head -n1)
+          if [ -z "$ISSUE_NUMBER" ]; then
+            echo "No issue number found in branch name."
+            exit 0
+          fi
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Move Issue to "Done" Status
+        if: steps.extract_issue.outputs.issue_number != ''
+        uses: ./.github/actions/move-issue-action
+        with:
+          github_token: ${{ secrets.ORG_PROJECT_PAT }}
+          org: 'Groupemtn'
+          project_number: '16'
+          status_name: 'Done'
+          issue_number: ${{ steps.extract_issue.outputs.issue_number }}
