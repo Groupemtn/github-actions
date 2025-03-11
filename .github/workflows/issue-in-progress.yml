@@ -31,7 +31,7 @@ jobs:
         with:
           script: |
             const issueNumber = ${{ steps.extract_issue.outputs.issue_number }};
-            const projectNumber = YOUR_PROJECT_NUMBER;  // Replace this with your GitHub Project number
+            const projectNumber = 3;  // Replace this with your GitHub Project number
             const inProgressStatusName = 'In Progress'; // Adjust if your column name is different
             const owner = context.repo.owner;
             const repo = context.repo.repo;
