@@ -12,25 +12,25 @@ jobs:
         uses: actions/checkout@v4 
 
       - name: Extract Issue Number
-        uses: ./.github/actions/extract-issue-branch
+        uses: ./extract-issue-branch
 
       - name: Assign Issue to the Branch Creator
         if: env.ISSUE_NUMBER != ''
-        uses: ./.github/actions/assign-issue
+        uses: ./assign-issue
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           issue_number: ${{ env.ISSUE_NUMBER }}
 
       - name: Link Branch to Issue
         if: env.ISSUE_NUMBER != ''
-        uses: ./.github/actions/link-branch
+        uses: ./link-branch
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           issue_number: ${{ env.ISSUE_NUMBER }}
 
       - name: Move Issue to Project Status
         if: env.ISSUE_NUMBER != ''
-        uses: ./.github/actions/move-issue
+        uses: ./move-issue
         with:
           github_token: ${{ secrets.ORG_PROJECT_PAT }}
           org: 'Groupemtn'
