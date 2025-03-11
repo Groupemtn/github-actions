@@ -27,7 +27,9 @@ jobs:
         uses: ./.github/actions/link-branch
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
+  link-pr:
+    runs-on: ubuntu-latest
+    steps:
       - name: Link PR to GitHub Issue
         if: github.event_name == 'pull_request'
         run: |
