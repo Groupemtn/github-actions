@@ -23,7 +23,6 @@ jobs:
             echo "No issue number found, skipping."
             exit 0
           fi
-
           echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
 
       - name: Move Issue to "In Review" Status
