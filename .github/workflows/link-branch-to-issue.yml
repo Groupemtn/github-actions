@@ -1,4 +1,6 @@
 name: Link Branch to Issue
+env:
+  GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
 on:
   create:
@@ -26,7 +28,7 @@ jobs:
       - name: Assign Issue to the Branch Creator
         if: env.ISSUE_NUMBER != ''
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           ISSUE_NUMBER=${{ env.ISSUE_NUMBER }}
           REPO="${{ github.repository }}"
