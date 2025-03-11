@@ -45,19 +45,30 @@ jobs:
 
           echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
 
+      - name: Normalize Branch Name
+        id: normalize
+        run: |
+          NORMALIZED_BRANCH="${{ github.ref_name }}"
+          NORMALIZED_BRANCH=$(echo "$NORMALIZED_BRANCH" | sed 's/#/-/g')
+          echo "NORMALIZED_BRANCH=$NORMALIZED_BRANCH" >> $GITHUB_ENV
+
       - name: Get branch ID from GitHub API
         id: get-branch-id
         run: |
-          BRANCH_NAME="${{ github.ref_name }}"
           RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                       -H "Content-Type: application/json" \
-                      -d "{\"query\":\"query { repository(owner: \\\"OWNER\\\", name: \\\"REPO\\\") { ref(qualifiedName: \\\"refs/heads/${BRANCH_NAME}\\\") { id } } }\"}" \
+                      -d "{\"query\":\"query { repository(owner: \\\"tenucki\\\", name: \\\"workflow\\\") { ref(qualifiedName: \\\"refs/heads/${{ env.NORMALIZED_BRANCH }}\\\") { id } } }\"}" \
                       https://api.github.com/graphql)
+
+          echo "GraphQL API Response: $RESPONSE"  # Debugging output
+
           BRANCH_ID=$(echo $RESPONSE | jq -r '.data.repository.ref.id')
-          if [[ "$BRANCH_ID" == "null" ]]; then
+
+          if [[ "$BRANCH_ID" == "null" || -z "$BRANCH_ID" ]]; then
             echo "Branch ID not found. Skipping."
             exit 0
           fi
+
           echo "BRANCH_ID=$BRANCH_ID" >> $GITHUB_ENV
 
       - name: Link branch to issue
