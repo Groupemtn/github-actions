@@ -1,0 +1,19 @@
+name: Extract Issue Number
+description: Extracts an issue number from the branch name
+
+runs:
+  using: "composite"
+  steps: 
+      - name: Extract Issue Number from Branch
+        id: extract_issue
+        shell: bash
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+')
+
+          if [[ -z "$ISSUE_NUMBER" ]]; then
+            echo "No issue number found, skipping."
+            exit 0
+          fi
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
