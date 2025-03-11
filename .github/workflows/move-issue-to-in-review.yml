@@ -12,18 +12,8 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4 
         
-      - name: Extract Issue Number from Branch
-        id: extract_issue
-        run: |
-          BRANCH_NAME="${{ github.head_ref }}"
-          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+')
-
-          if [[ -z "$ISSUE_NUMBER" ]]; then
-            echo "No issue number found, skipping."
-            exit 0
-          fi
-
-          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
+      - name: Extract Issue Number
+        uses: ./.github/actions/extract-issue  
 
       - name: Move Issue to "In Review" Status
         if: env.ISSUE_NUMBER != ''
