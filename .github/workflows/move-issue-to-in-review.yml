@@ -1,13 +1,12 @@
-name: Move Issue to Done on PR Close
+name: Move Issue to In Review on PR
 
 on:
   pull_request:
     types:
-      - closed
+      - opened
 
 jobs:
-  move-issue-to-done:
-    if: github.event.pull_request.merged == true
+  move-issue-in-review:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -23,14 +22,15 @@ jobs:
             echo "No issue number found, skipping."
             exit 0
           fi
+
           echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
 
-      - name: Move Issue to "Done" Status
+      - name: Move Issue to "In Review" Status
         if: env.ISSUE_NUMBER != ''
         uses: ./.github/actions/move-issue
         with:
           github_token: ${{ secrets.ORG_PROJECT_PAT }}
           org: 'Groupemtn'
           project_number: '16'
-          status_name: 'Done'
+          status_name: 'In Review'
           issue_number: ${{ env.ISSUE_NUMBER }}
