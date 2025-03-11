@@ -12,12 +12,15 @@ jobs:
       - name: Extract Issue Number from Branch
         id: extract_issue
         run: |
-          ISSUE_NUMBER=$(echo "${{ github.head_ref }}" | grep -oE '[0-9]+' | head -n1)
-          if [ -z "$ISSUE_NUMBER" ]; then
-            echo "No issue number found in branch name."
+          BRANCH_NAME="${{ github.head_ref }}"
+          ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+')
+
+          if [[ -z "$ISSUE_NUMBER" ]]; then
+            echo "No issue number found, skipping."
             exit 0
           fi
-          echo "ISSUE_NUMBERr=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+
+          echo "ISSUE_NUMBER=$ISSUE_NUMBER" >> $GITHUB_ENV
 
       - name: Move Issue to "In Review" Status
         if: env.ISSUE_NUMBER != ''
