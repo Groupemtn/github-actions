@@ -42,7 +42,7 @@ jobs:
           ISSUE_NUMBER=${{ env.ISSUE_NUMBER }}
           RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                       -H "Content-Type: application/json" \
-                      -d "{\"query\":\"query { repository(owner: \\\"OWNER\\\", name: \\\"REPO\\\") { issue(number: ${ISSUE_NUMBER}) { id } } }\"}" \
+                      -d "{\"query\":\"query { repository(owner: tenucki, name: workflow) { issue(number: ${ISSUE_NUMBER}) { id } } }\"}" \
                       https://api.github.com/graphql)
           ISSUE_ID=$(echo $RESPONSE | jq -r '.data.repository.issue.id')
           if [[ "$ISSUE_ID" == "null" ]]; then
