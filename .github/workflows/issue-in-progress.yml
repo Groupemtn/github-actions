@@ -9,7 +9,7 @@ permissions:
   contents: read
   issues: write
   pull-requests: write
-  repository-projects: write  # Correct permission name
+  repository-projects: write
 
 jobs:
   move-issue-to-in-progress:
@@ -32,14 +32,14 @@ jobs:
         with:
           script: |
             const issueNumber = ${{ steps.extract_issue.outputs.issue_number }};
-            const projectNumber = 3;  // <-- Replace with your project number
+            const projectNumber = YOUR_PROJECT_NUMBER; // <-- Adjust your project number here
             const inProgressStatusName = 'In Progress';
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
             const project = await github.graphql(`
-              query($owner: String!, $repo: String!, $projectNumber: Int!) {
-                repository(owner: $owner, name: $repo) {
+              query($owner: String!, $projectNumber: Int!) {
+                user(login: $owner) {
                   projectV2(number: $projectNumber) {
                     id
                     fields(first: 20) {
@@ -57,10 +57,10 @@ jobs:
                   }
                 }
               }
-            `, { owner, repo, projectNumber });
+            `, { owner, projectNumber });
 
-            const projectId = project.repository.projectV2.id;
-            const statusField = project.repository.projectV2.fields.nodes.find(f => f.name === "Status");
+            const projectId = project.user.projectV2.id;
+            const statusField = project.user.projectV2.fields.nodes.find(f => f.name === "Status");
             const inProgressOption = statusField.options.find(opt => opt.name === inProgressStatusName);
 
             const items = await github.graphql(`
