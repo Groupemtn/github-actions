@@ -17,7 +17,7 @@ jobs:
             echo "No issue number found in branch name."
             exit 0
           fi
-          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          echo "ISSUE_NUMBERr=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Move Issue to "In Review" Status
         if: env.ISSUE_NUMBER != ''
