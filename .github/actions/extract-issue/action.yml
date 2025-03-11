@@ -7,9 +7,9 @@ runs:
     - name: Extract Issue Number from Branch Name
       id: extract-issue
       shell: bash
-      run: |
+      run: | 
         BRANCH_NAME="${{ github.ref_name }}"
-        ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -oE '#[0-9]+' | tr -d '#')
+        ISSUE_NUMBER=$(echo "$BRANCH_NAME" | grep -oE '[0-9]+')
 
         if [[ -z "$ISSUE_NUMBER" ]]; then
           echo "No issue number found, skipping."
