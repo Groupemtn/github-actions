@@ -11,9 +11,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4 
-        
+
       - name: Move Issue to "Todo"
-        uses: ./.github/actions/move-issue-action
+        uses: ./.github/actions/move-issue
         with:
           github_token: ${{ secrets.ORG_PROJECT_PAT }}
           org: 'Groupemtn'
