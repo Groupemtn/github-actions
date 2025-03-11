@@ -66,16 +66,11 @@ jobs:
 
           echo "BRANCH_ID=$BRANCH_ID" >> $GITHUB_ENV
 
-
-      - name: Add Assignee to Issue (Alternative Action)
+      - name: Link branch to issue (Create comment)
         run: |
           curl -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                -H "Content-Type: application/json" \
-               -d '{
-                 "query": "mutation AddAssignee($issueId: ID!, $assignee: String!) { addAssigneesToAssignable(input: {assignableId: $issueId, assigneeIds: [$assignee]}) { clientMutationId } }",
-                 "variables": {
-                   "issueId": "'${{ env.ISSUE_ID }}'",
-                   "assignee": "YOUR_GITHUB_USER_ID"
-                 }
-               }' \
-               https://api.github.com/graphql
+               -d "{
+                 \"body\": \"🔗 This branch [${{ github.ref_name }}](https://github.com/tenuckii/workflow/tree/${{ github.ref_name }}) has been created and is linked to this issue.\"
+               }" \
+               "https://api.github.com/repos/tenuckii/workflow/issues/${{ env.ISSUE_NUMBER }}/comments"
