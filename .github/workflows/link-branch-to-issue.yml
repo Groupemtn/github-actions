@@ -60,23 +60,25 @@ jobs:
 
           echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
 
-      - name: Link Branch to Issue in Development Section
+      - name: Link Issue to GitHub Project (Development Section)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_ID: ${{ env.ISSUE_ID }}
-          BRANCH_NAME: ${{ github.ref_name }}
-          REPO: ${{ github.repository }}
+          PROJECT_ID: "YOUR_PROJECT_ID" # Replace with your actual project ID
         run: |
-          MUTATION='
-          mutation {
-            addProjectV2ItemById(input: {projectId: "YOUR_PROJECT_ID", contentId: "'"$ISSUE_ID"'"}) {
-              item {
-                id
-              }
-            }
-          }'
+          if [[ -z "$ISSUE_ID" ]]; then
+            echo "Issue ID is empty. Skipping project linking."
+            exit 0
+          fi
+
+          # Properly format JSON mutation using jq
+          MUTATION=$(jq -n --arg project "$PROJECT_ID" --arg content "$ISSUE_ID" \
+          '{"query": "mutation { addProjectV2ItemById(input: {projectId: \($project), contentId: \($content)}) { item { id } } }"}')
+
+          echo "Debug: MUTATION=$MUTATION"
+
           RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-                          -H "Content-Type: application/json" \
-                          -X POST -d '{"query": "'"$MUTATION"'"}' https://api.github.com/graphql)
+                            -H "Content-Type: application/json" \
+                            -X POST -d "$MUTATION" https://api.github.com/graphql)
 
           echo "Response: $RESPONSE"
