@@ -37,7 +37,6 @@ jobs:
             const org = 'Groupemtn';
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-
             const project = await github.graphql(`
               query($org: String!, $projectNumber: Int!) {
                 organization(login: $org) {
