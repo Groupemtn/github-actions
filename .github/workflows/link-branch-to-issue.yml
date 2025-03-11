@@ -60,23 +60,23 @@ jobs:
 
           echo "ISSUE_ID=$ISSUE_ID" >> $GITHUB_ENV
 
-      # - name: Link Branch to Issue in Development Section
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     ISSUE_ID: ${{ env.ISSUE_ID }}
-      #     BRANCH_NAME: ${{ github.ref_name }}
-      #     REPO: ${{ github.repository }}
-      #   run: |
-      #     MUTATION='
-      #     mutation {
-      #       addProjectV2ItemById(input: {projectId: "YOUR_PROJECT_ID", contentId: "'"$ISSUE_ID"'"}) {
-      #         item {
-      #           id
-      #         }
-      #       }
-      #     }'
-      #     RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-      #                     -H "Content-Type: application/json" \
-      #                     -X POST -d '{"query": "'"$MUTATION"'"}' https://api.github.com/graphql)
+      - name: Link Branch to Issue in Development Section
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_ID: ${{ env.ISSUE_ID }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          MUTATION='
+          mutation {
+            addProjectV2ItemById(input: {projectId: "YOUR_PROJECT_ID", contentId: "'"$ISSUE_ID"'"}) {
+              item {
+                id
+              }
+            }
+          }'
+          RESPONSE=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+                          -H "Content-Type: application/json" \
+                          -X POST -d '{"query": "'"$MUTATION"'"}' https://api.github.com/graphql)
 
-      #     echo "Response: $RESPONSE"
+          echo "Response: $RESPONSE"
