@@ -1,24 +1,22 @@
-name: Assign Issue to Creator
-description: Assigns the issue to the branch creator
+name: Assign Issue to User
+description: Assigns an issue to the creator of the branch or PR
 
 inputs:
   github_token:
-    description: "GitHub token"
+    description: GitHub token
+    required: true
+  issue_number:
+    description: Number of the issue to assign
     required: true
 
 runs:
-  using: "composite"
+  using: composite
   steps:
-    - name: Assign Issue to the Branch Creator
+    - name: Assign issue
       shell: bash
       run: |
-        ISSUE_NUMBER=${{ env.ISSUE_NUMBER }}
-        REPO="${{ github.repository }}"
-        USER="${{ github.actor }}"
-
-        curl -L -X POST \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ inputs.github_token }}" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          https://api.github.com/repos/$REPO/issues/$ISSUE_NUMBER/assignees \
-          -d "{\"assignees\": [\"$USER\"]}"
+        curl -X POST \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer ${{ inputs.github_token }}" \
+        https://api.github.com/repos/${{ github.repository }}/issues/${{ inputs.issue_number }}/assignees \
+        -d '{"assignees":["${{ github.actor }}"]}'
