@@ -1,24 +1,22 @@
 name: Link Branch to Issue
-description: Adds a comment linking the branch to the issue
+description: Links the branch to the specified issue by adding a comment.
 
 inputs:
   github_token:
-    description: "GitHub token"
+    description: GitHub token
+    required: true
+  issue_number:
+    description: Issue number to link to the branch
     required: true
 
 runs:
-  using: "composite"
+  using: composite
   steps:
-    - name: Link Branch to GitHub Issue
+    - name: Add branch link comment
       shell: bash
       run: |
-        ISSUE_NUMBER=${{ env.ISSUE_NUMBER }}
-        BRANCH_NAME="${{ github.ref_name }}"
-        REPO="${{ github.repository }}"
-
-        COMMENT_BODY="🚀 A new branch [\`$BRANCH_NAME\`](https://github.com/$REPO/tree/$BRANCH_NAME) has been created for this issue."
-
-        curl -X POST -H "Authorization: Bearer ${{ inputs.github_token }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/repos/$REPO/issues/$ISSUE_NUMBER/comments \
-          -d "{\"body\": \"$COMMENT_BODY\"}"
+        curl -X POST \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer ${{ inputs.github_token }}" \
+        https://api.github.com/repos/${{ github.repository }}/issues/${{ inputs.issue_number }}/comments \
+        -d '{"body": "🔗 Linked branch: `${{ github.ref_name }}`"}'
